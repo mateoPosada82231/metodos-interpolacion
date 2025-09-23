@@ -99,27 +99,39 @@ def crear_funcion_newton(pares_xy):
 
     return funcion, polinomio_final, coeficientes, tabla
 
+def escoger_ruta():
+    """
+    Solicita al usuario la ruta del archivo CSV y la devuelve.
+    """
+    des = input("Ingrese el experimentento (1, 2 o 3) y la aceleracion Y:Aceleracion en Y o L:Aceletacion lineal\nIngreselo junto y son mayusculas ejm: 1Y, 2L, 3Y: ")
+    ruta = f"Datos/{des}.csv"
+    return ruta
 
+# python
 def leer_puntos_csv(ruta):
     """
-    Lee un archivo CSV con dos columnas separadas por espacio, usando coma como separador decimal.
-    Devuelve una lista de tuplas (x, y) ordenadas por x.
+    Lee un archivo CSV con dos columnas separadas por coma.
+    Devuelve una lista de tuplas (x, y) ordenadas por x, con decimales limitados a 5.
     """
     puntos = []
     with open(ruta, 'r', encoding='utf-8') as f:
         for linea in f:
             if linea.strip():
-                partes = linea.strip().split()
+                partes = linea.strip().split(',')
                 if len(partes) == 2:
-                    x = float(partes[0].replace(',', '.'))
-                    y = float(partes[1].replace(',', '.'))
+                    x_str = partes[0].replace(',', '.').rstrip('.')
+                    y_str = partes[1].replace(',', '.').rstrip('.')
+                    x = round(float(x_str), 5)
+                    y = round(float(y_str), 5)
                     puntos.append((x, y))
     puntos.sort(key=lambda t: t[0])
     return puntos
 
 
 # Definir los puntos por los que debe pasar la función
-puntos = leer_puntos_csv('Datos/DatosDePrueba.csv')
+ruta = escoger_ruta()
+puntos = leer_puntos_csv(ruta)
+print(f"\nPuntos leídos de {ruta}: {puntos}\n")
 
 # MÉTODO DE LAGRANGE - Crear función interpolante
 f_lagrange, polinomio_lag, coef_lag = crear_funcion_lagrange(puntos)
