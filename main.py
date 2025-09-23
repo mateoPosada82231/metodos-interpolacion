@@ -103,7 +103,11 @@ def escoger_ruta():
     """
     Solicita al usuario la ruta del archivo CSV y la devuelve.
     """
-    des = input("Ingrese el experimentento (1, 2 o 3) y la aceleracion Y:Aceleracion en Y o L:Aceletacion lineal\nIngreselo junto y son mayusculas ejm: 1Y, 2L, 3Y: ")
+    des = ""
+    while des not in ["1Y", "1L", "2Y", "2L", "3Y", "3L"]:
+        des = input("Elige el conjunto de datos (1Y, 1L, 2Y, 2L, 3Y, 3L): ").strip().upper()
+        if des not in ["1Y", "1L", "2Y", "2L", "3Y", "3L"]:
+            print("Opción no válida. Intenta de nuevo.")
     ruta = f"Datos/{des}.csv"
     return ruta
 
