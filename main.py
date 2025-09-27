@@ -127,8 +127,8 @@ def leer_puntos_csv(ruta):
                 if len(partes) == 2:
                     x_str = partes[0].replace(',', '.').rstrip('.')
                     y_str = partes[1].replace(',', '.').rstrip('.')
-                    x = round(float(x_str), 5)
-                    y = round(float(y_str), 5)
+                    x = round(float(x_str), 10)
+                    y = round(float(y_str), 10)
                     puntos.append((x, y))
     puntos.sort(key=lambda t: t[0])
     return puntos
@@ -164,33 +164,33 @@ def procesar_y_reportar(ruta_archivo, stream):
     # MÉTODO DE LAGRANGE
     f_lagrange, polinomio_lag, coef_lag, pol_lag_sin_simplificar = crear_funcion_lagrange(puntos_interpolacion)
     stream.write("\n🔹 LAGRANGE\n")
-    stream.write(f"Polinomio sin simplificar: P(x) = {pol_lag_sin_simplificar.evalf(5)}\n")
-    stream.write(f"Polinomio simplificado: P(x) = {polinomio_lag.evalf(5)}\n")
-    stream.write(f"Coeficientes: {[round(c, 5) for c in coef_lag]}\n")
+    stream.write(f"Polinomio sin simplificar: P(x) = {pol_lag_sin_simplificar.evalf(10)}\n")
+    stream.write(f"Polinomio simplificado: P(x) = {polinomio_lag.evalf(10)}\n")
+    stream.write(f"Coeficientes: {[round(c, 10) for c in coef_lag]}\n")
 
     # MÉTODO DE NEWTON
     f_newton, polinomio_new, coef_new, tabla, pol_new_sin_simplificar = crear_funcion_newton(puntos_interpolacion)
     stream.write("\n🔹 NEWTON\n")
-    stream.write(f"Polinomio sin simplificar: P(x) = {pol_new_sin_simplificar.evalf(5)}\n")
-    stream.write(f"Polinomio simplificado: P(x) = {polinomio_new.evalf(5)}\n")
-    stream.write(f"Coeficientes: {[round(c, 5) for c in coef_new]}\n")
+    stream.write(f"Polinomio sin simplificar: P(x) = {pol_new_sin_simplificar.evalf(10)}\n")
+    stream.write(f"Polinomio simplificado: P(x) = {polinomio_new.evalf(10)}\n")
+    stream.write(f"Coeficientes: {[round(c, 10) for c in coef_new]}\n")
 
     # TABLA DE ERRORES
     stream.write("\n🔹 TABLA DE ERRORES (puntos no utilizados en la interpolación)\n")
-    stream.write("-" * 55 + "\n")
-    stream.write(f"{'Punto (x, y)':<25} | {'Valor Polinomio P(x)':<20} | {'Error |y - P(x)|':<15}\n")
-    stream.write("-" * 55 + "\n")
+    stream.write("-" * 65 + "\n")
+    stream.write(f"{'Punto (x, y)':<30} | {'Valor Polinomio P(x)':<25} | {'Error |y - P(x)|':<20}\n")
+    stream.write("-" * 65 + "\n")
     for x, y in puntos_verificacion:
         valor_evaluado = f_lagrange(x)
         error = abs(y - valor_evaluado)
-        stream.write(f"({x:<10}, {y:<10}) | {round(valor_evaluado, 5):<20} | {round(error, 5):<15}\n")
-    stream.write("-" * 55 + "\n")
+        stream.write(f"({x:<12}, {y:<12}) | {round(valor_evaluado, 10):<25} | {round(error, 10):<20}\n")
+    stream.write("-" * 65 + "\n")
 
     # VERIFICACIÓN
     stream.write(f"\nVerificación (puntos de interpolación):\n")
     for x, y in puntos_interpolacion:
-        resultado = round(f_lagrange(x), 5)
-        stream.write(f"Punto ({x}, {y}): f({x}) = {resultado} (Error: {round(abs(y - resultado), 5)}) ✓\n")
+        resultado = round(f_lagrange(x), 10)
+        stream.write(f"Punto ({x}, {y}): f({x}) = {resultado} (Error: {round(abs(y - resultado), 10)}) ✓\n")
     stream.write("\n")
 
 
