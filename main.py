@@ -30,6 +30,7 @@ def crear_funcion_lagrange(pares_xy):
         polinomio += y_vals[i] * Li
 
     # Simplificar el polinomio
+    polinomio_sin_simplificar = polinomio
     polinomio_final = simplify(expand(polinomio))
 
     # Crear función evaluable
@@ -42,7 +43,7 @@ def crear_funcion_lagrange(pares_xy):
     except:
         coeficientes = [float(polinomio_final)] if polinomio_final.is_number else [0]
 
-    return funcion, polinomio_final, coeficientes
+    return funcion, polinomio_final, coeficientes, polinomio_sin_simplificar
 
 
 def crear_funcion_newton(pares_xy):
@@ -85,6 +86,7 @@ def crear_funcion_newton(pares_xy):
         polinomio += tabla[0][i] * producto
 
     # Simplificar
+    polinomio_sin_simplificar = polinomio
     polinomio_final = simplify(expand(polinomio))
 
     # Crear función evaluable
@@ -97,7 +99,7 @@ def crear_funcion_newton(pares_xy):
     except:
         coeficientes = [float(polinomio_final)] if polinomio_final.is_number else [0]
 
-    return funcion, polinomio_final, coeficientes, tabla
+    return funcion, polinomio_final, coeficientes, tabla, polinomio_sin_simplificar
 
 def escoger_ruta():
     """
@@ -134,30 +136,58 @@ def leer_puntos_csv(ruta):
 
 # Definir los puntos por los que debe pasar la función
 ruta = escoger_ruta()
-puntos = leer_puntos_csv(ruta)
-print(f"\nPuntos leídos de {ruta}: {puntos}\n")
+todos_los_puntos = leer_puntos_csv(ruta)
+
+# Seleccionar puntos específicos para la interpolación (índices 1-based)
+indices_a_tomar = [7, 10, 13, 16, 19, 21, 24]
+puntos_interpolacion = [todos_los_puntos[i - 1] for i in indices_a_tomar if i <= len(todos_los_puntos)]
+
+# Puntos restantes para la tabla de errores
+puntos_verificacion = [p for i, p in enumerate(todos_los_puntos) if (i + 1) not in indices_a_tomar]
+
+print(f"\nSe leyeron {len(todos_los_puntos)} puntos de {ruta}.")
+print(f"Se usarán {len(puntos_interpolacion)} puntos para la interpolación.")
+
+# Mostrar puntos tomados y el intervalo
+print("\nPuntos utilizados para la interpolación:")
+print(puntos_interpolacion)
+intervalo_x = (puntos_interpolacion[0][0], puntos_interpolacion[-1][0])
+print(f"Intervalo en X de los puntos de interpolación: {intervalo_x}")
+
 
 # MÉTODO DE LAGRANGE - Crear función interpolante
-f_lagrange, polinomio_lag, coef_lag = crear_funcion_lagrange(puntos)
+f_lagrange, polinomio_lag, coef_lag, pol_lag_sin_simplificar = crear_funcion_lagrange(puntos_interpolacion)
 
-print("🔹 LAGRANGE")
-print(f"Polinomio: P(x) = {polinomio_lag.evalf(5)}")
+print("\n🔹 LAGRANGE")
+print(f"Polinomio sin simplificar: P(x) = {pol_lag_sin_simplificar.evalf(5)}")
+print(f"Polinomio simplificado: P(x) = {polinomio_lag.evalf(5)}")
 print(f"Coeficientes: {[round(c, 5) for c in coef_lag]}")
 
 # MÉTODO DE NEWTON - Crear función interpolante
-f_newton, polinomio_new, coef_new, tabla = crear_funcion_newton(puntos)
+f_newton, polinomio_new, coef_new, tabla, pol_new_sin_simplificar = crear_funcion_newton(puntos_interpolacion)
 
-print("🔹 NEWTON")
-print(f"Polinomio: P(x) = {polinomio_new.evalf(5)}")
+print("\n🔹 NEWTON")
+print(f"Polinomio sin simplificar: P(x) = {pol_new_sin_simplificar.evalf(5)}")
+print(f"Polinomio simplificado: P(x) = {polinomio_new.evalf(5)}")
 print(f"Coeficientes: {[round(c, 5) for c in coef_new]}")
 
-# USAR LAS FUNCIONES CREADAS
-print(f"\nEvaluaciones:")
-print(f"f_lagrange(1) = {round(f_lagrange(1), 5)}")
-print(f"f_newton(1) = {round(f_newton(1), 5)}")
 
-# VERIFICAR que pasan por los puntos originales
-print(f"\nVerificación:")
-for x, y in puntos:
+# TABLA DE ERRORES con los puntos no utilizados
+print("\n🔹 TABLA DE ERRORES (puntos no utilizados en la interpolación)")
+print("-" * 55)
+print(f"{'Punto (x, y)':<25} | {'Valor Polinomio P(x)':<20} | {'Error |y - P(x)|':<15}")
+print("-" * 55)
+
+for x, y in puntos_verificacion:
+    valor_evaluado = f_lagrange(x)
+    error = abs(y - valor_evaluado)
+    print(f"({x:<10}, {y:<10}) | {round(valor_evaluado, 5):<20} | {round(error, 5):<15}")
+
+print("-" * 55)
+
+
+# VERIFICAR que pasan por los puntos originales de interpolación
+print(f"\nVerificación (puntos de interpolación):")
+for x, y in puntos_interpolacion:
     resultado = round(f_lagrange(x), 5)
-    print(f"Punto ({x}, {y}): f({x}) = {resultado} ✓")
+    print(f"Punto ({x}, {y}): f({x}) = {resultado} (Error: {round(abs(y - resultado), 5)}) ✓")
