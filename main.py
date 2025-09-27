@@ -134,60 +134,83 @@ def leer_puntos_csv(ruta):
     return puntos
 
 
-# Definir los puntos por los que debe pasar la función
-ruta = escoger_ruta()
-todos_los_puntos = leer_puntos_csv(ruta)
+def procesar_y_reportar(ruta_archivo, stream):
+    """
+    Realiza el análisis de interpolación para un archivo de datos y escribe
+    los resultados en un stream (puede ser la consola o un archivo).
+    """
+    stream.write(f"\n{'='*80}\n")
+    stream.write(f"REPORTE PARA EL ARCHIVO: {ruta_archivo}\n")
+    stream.write(f"{'='*80}\n")
 
-# Seleccionar puntos específicos para la interpolación (índices 1-based)
-indices_a_tomar = [7, 10, 13, 16, 19, 21, 24]
-puntos_interpolacion = [todos_los_puntos[i - 1] for i in indices_a_tomar if i <= len(todos_los_puntos)]
+    todos_los_puntos = leer_puntos_csv(ruta_archivo)
 
-# Puntos restantes para la tabla de errores
-puntos_verificacion = [p for i, p in enumerate(todos_los_puntos) if (i + 1) not in indices_a_tomar]
+    # Seleccionar puntos específicos para la interpolación (índices 1-based)
+    indices_a_tomar = [7, 10, 13, 16, 19, 21, 24]
+    puntos_interpolacion = [todos_los_puntos[i - 1] for i in indices_a_tomar if i <= len(todos_los_puntos)]
 
-print(f"\nSe leyeron {len(todos_los_puntos)} puntos de {ruta}.")
-print(f"Se usarán {len(puntos_interpolacion)} puntos para la interpolación.")
+    # Puntos restantes para la tabla de errores
+    puntos_verificacion = [p for i, p in enumerate(todos_los_puntos) if (i + 1) not in indices_a_tomar]
 
-# Mostrar puntos tomados y el intervalo
-print("\nPuntos utilizados para la interpolación:")
-print(puntos_interpolacion)
-intervalo_x = (puntos_interpolacion[0][0], puntos_interpolacion[-1][0])
-print(f"Intervalo en X de los puntos de interpolación: {intervalo_x}")
+    stream.write(f"\nSe leyeron {len(todos_los_puntos)} puntos de {ruta_archivo}.\n")
+    stream.write(f"Se usarán {len(puntos_interpolacion)} puntos para la interpolación.\n")
+
+    # Mostrar puntos tomados y el intervalo
+    stream.write("\nPuntos utilizados para la interpolación:\n")
+    stream.write(str(puntos_interpolacion) + "\n")
+    intervalo_x = (puntos_interpolacion[0][0], puntos_interpolacion[-1][0])
+    stream.write(f"Intervalo en X de los puntos de interpolación: {intervalo_x}\n")
+
+    # MÉTODO DE LAGRANGE
+    f_lagrange, polinomio_lag, coef_lag, pol_lag_sin_simplificar = crear_funcion_lagrange(puntos_interpolacion)
+    stream.write("\n🔹 LAGRANGE\n")
+    stream.write(f"Polinomio sin simplificar: P(x) = {pol_lag_sin_simplificar.evalf(5)}\n")
+    stream.write(f"Polinomio simplificado: P(x) = {polinomio_lag.evalf(5)}\n")
+    stream.write(f"Coeficientes: {[round(c, 5) for c in coef_lag]}\n")
+
+    # MÉTODO DE NEWTON
+    f_newton, polinomio_new, coef_new, tabla, pol_new_sin_simplificar = crear_funcion_newton(puntos_interpolacion)
+    stream.write("\n🔹 NEWTON\n")
+    stream.write(f"Polinomio sin simplificar: P(x) = {pol_new_sin_simplificar.evalf(5)}\n")
+    stream.write(f"Polinomio simplificado: P(x) = {polinomio_new.evalf(5)}\n")
+    stream.write(f"Coeficientes: {[round(c, 5) for c in coef_new]}\n")
+
+    # TABLA DE ERRORES
+    stream.write("\n🔹 TABLA DE ERRORES (puntos no utilizados en la interpolación)\n")
+    stream.write("-" * 55 + "\n")
+    stream.write(f"{'Punto (x, y)':<25} | {'Valor Polinomio P(x)':<20} | {'Error |y - P(x)|':<15}\n")
+    stream.write("-" * 55 + "\n")
+    for x, y in puntos_verificacion:
+        valor_evaluado = f_lagrange(x)
+        error = abs(y - valor_evaluado)
+        stream.write(f"({x:<10}, {y:<10}) | {round(valor_evaluado, 5):<20} | {round(error, 5):<15}\n")
+    stream.write("-" * 55 + "\n")
+
+    # VERIFICACIÓN
+    stream.write(f"\nVerificación (puntos de interpolación):\n")
+    for x, y in puntos_interpolacion:
+        resultado = round(f_lagrange(x), 5)
+        stream.write(f"Punto ({x}, {y}): f({x}) = {resultado} (Error: {round(abs(y - resultado), 5)}) ✓\n")
+    stream.write("\n")
 
 
-# MÉTODO DE LAGRANGE - Crear función interpolante
-f_lagrange, polinomio_lag, coef_lag, pol_lag_sin_simplificar = crear_funcion_lagrange(puntos_interpolacion)
+if __name__ == "__main__":
+    # Lista de todos los archivos de datos a procesar
+    archivos_datos = [
+        "Datos/1Y.csv", "Datos/1L.csv",
+        "Datos/2Y.csv", "Datos/2L.csv",
+        "Datos/3Y.csv", "Datos/3L.csv"
+    ]
 
-print("\n🔹 LAGRANGE")
-print(f"Polinomio sin simplificar: P(x) = {pol_lag_sin_simplificar.evalf(5)}")
-print(f"Polinomio simplificado: P(x) = {polinomio_lag.evalf(5)}")
-print(f"Coeficientes: {[round(c, 5) for c in coef_lag]}")
+    # Abrir el archivo de reporte en modo escritura
+    with open("reporte.txt", "w", encoding="utf-8") as f_reporte:
+        # Procesar cada archivo y escribir en el reporte
+        for archivo in archivos_datos:
+            try:
+                procesar_y_reportar(archivo, f_reporte)
+            except Exception as e:
+                f_reporte.write(f"\n{'!'*80}\n")
+                f_reporte.write(f"ERROR al procesar el archivo {archivo}: {e}\n")
+                f_reporte.write(f"{'!'*80}\n\n")
 
-# MÉTODO DE NEWTON - Crear función interpolante
-f_newton, polinomio_new, coef_new, tabla, pol_new_sin_simplificar = crear_funcion_newton(puntos_interpolacion)
-
-print("\n🔹 NEWTON")
-print(f"Polinomio sin simplificar: P(x) = {pol_new_sin_simplificar.evalf(5)}")
-print(f"Polinomio simplificado: P(x) = {polinomio_new.evalf(5)}")
-print(f"Coeficientes: {[round(c, 5) for c in coef_new]}")
-
-
-# TABLA DE ERRORES con los puntos no utilizados
-print("\n🔹 TABLA DE ERRORES (puntos no utilizados en la interpolación)")
-print("-" * 55)
-print(f"{'Punto (x, y)':<25} | {'Valor Polinomio P(x)':<20} | {'Error |y - P(x)|':<15}")
-print("-" * 55)
-
-for x, y in puntos_verificacion:
-    valor_evaluado = f_lagrange(x)
-    error = abs(y - valor_evaluado)
-    print(f"({x:<10}, {y:<10}) | {round(valor_evaluado, 5):<20} | {round(error, 5):<15}")
-
-print("-" * 55)
-
-
-# VERIFICAR que pasan por los puntos originales de interpolación
-print(f"\nVerificación (puntos de interpolación):")
-for x, y in puntos_interpolacion:
-    resultado = round(f_lagrange(x), 5)
-    print(f"Punto ({x}, {y}): f({x}) = {resultado} (Error: {round(abs(y - resultado), 5)}) ✓")
+    print("El reporte 'reporte.txt' ha sido generado exitosamente.")
